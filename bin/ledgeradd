@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require 'ostruct'
+require 'optparse'
+
+PROG_BASEDIR = File.expand_path("..",File.dirname(__FILE__))
+
+$: << [PROG_BASEDIR, "lib"].join("/")
+
+Dir[[PROG_BASEDIR, "lib", "*.rb"].join("/")].each do |file| 
+  require File.basename(file, File.extname(file))
+end
+
+PROGRAM_NAME = File.basename($0)
+PROGRAM_VERSION = "1.0"
+
+params = OpenStruct.new
+
+optparse = OptionParser.new do |opts|
+   opts.banner = "Usage: #{PROGRAM_NAME} [options] <Type> <Name>"
+
+   opts.on('-h', '--help', 'Display this message') do
+      puts opts
+      exit
+   end
+
+   opts.on('-v', '--version', 'Display version number of $0 command') do
+      puts "#{PROGRAM_NAME} #{PROGRAM_VERSION}"
+      exit
+   end
+end
+
+optparse.parse!
+
+params.type = ARGV.shift
+params.name = ARGV.shift
+raise "Missing Account Type" if params.type.nil?
+raise "missing Account Name" if params.type.nil?
+
+db = Database.new
+ledger = Ledger.new(params.type, params.name)
+begin
+   db.insert(ledger.encode)
+   puts "Account Created Successfully"
+rescue
+   puts "Account Creation Failed"
+end
+
